@@ -1,467 +1,252 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ayam Bakar Kampus - POS System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-      }
-      .menu-card:active {
-        transform: scale(0.95);
-      }
-      .custom-scroll::-webkit-scrollbar {
-        width: 4px;
-      }
-      .custom-scroll::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-      }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .menu-card:active { transform: scale(0.95); }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        #receipt-print { display: none; }
 
-      #receipt-print {
-        display: none;
-      }
-
-      @media print {
-        body * {
-          display: none !important;
+        @media print {
+            body * { display: none !important; }
+            #receipt-print, #receipt-print * { display: block !important; visibility: visible !important; }
+            #receipt-print { 
+                display: block !important;
+                position: absolute; left: 0; top: 0; width: 58mm; padding: 2mm;
+                background: white; color: black; font-family: 'Courier New', Courier, monospace;
+            }
+            .flex-print { display: flex !important; justify-content: space-between !important; width: 100%; }
         }
-        #receipt-print,
-        #receipt-print * {
-          display: block !important;
-          visibility: visible !important;
-        }
-        #receipt-print {
-          display: block !important;
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 58mm;
-          padding: 2mm;
-          background: white;
-          color: black;
-          font-family: "Courier New", Courier, monospace;
-        }
-        .flex-print {
-          display: flex !important;
-          justify-content: space-between !important;
-          width: 100%;
-        }
-      }
     </style>
-  </head>
-  <body class="bg-[#F8FAFC] min-h-screen text-slate-800">
+</head>
+<body class="bg-[#F8FAFC] min-h-screen text-slate-800">
+
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
-      <div
-        class="max-w-[1440px] mx-auto px-4 h-20 flex justify-between items-center"
-      >
-        <div class="flex items-center gap-4">
-          <img
-            src="logo.png"
-            alt="Logo"
-            class="h-14 w-14 object-contain rounded-xl shadow-sm"
-          />
-          <div>
-            <h1
-              class="text-xl font-bold text-slate-900 tracking-tight uppercase"
-            >
-              Ayam Bakar Kampus
-            </h1>
-            <p
-              class="text-[10px] text-orange-500 font-bold tracking-widest uppercase"
-            >
-              Premium Quality Service
-            </p>
-          </div>
+        <div class="max-w-[1440px] mx-auto px-4 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="LOGO ABK 2.0.jpg" alt="Logo" class="h-14 w-14 object-contain rounded-xl shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight uppercase">Ayam Bakar Kampus</h1>
+                    <p class="text-[10px] text-orange-500 font-bold tracking-widest uppercase">Premium Quality Service</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="hidden md:block text-right">
+                    <p id="live-clock" class="text-sm font-bold text-slate-700"></p>
+                    <p class="text-[10px] text-slate-400" id="live-date"></p>
+                </div>
+                <div class="h-10 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
+                <span id="sync-status" class="bg-blue-50 text-blue-600 text-[10px] font-bold px-4 py-2 rounded-full border border-blue-100 uppercase tracking-tighter italic">Cloud Sync Active</span>
+            </div>
         </div>
-        <div class="flex items-center gap-3">
-          <div class="hidden md:block text-right">
-            <p id="live-clock" class="text-sm font-bold text-slate-700"></p>
-            <p class="text-[10px] text-slate-400" id="live-date"></p>
-          </div>
-          <div class="h-10 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
-          <span
-            id="log-count"
-            class="bg-orange-50 text-orange-600 text-xs font-bold px-4 py-2 rounded-full border border-orange-100 uppercase tracking-tighter"
-            >0 Transaksi</span
-          >
-        </div>
-      </div>
     </nav>
 
-    <main
-      class="max-w-[1440px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6"
-    >
-      <div class="lg:col-span-8">
-        <h2
-          class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"
-        >
-          <span class="w-1.5 h-5 bg-orange-500 rounded-full"></span> Menu Utama
-        </h2>
-        <div
-          class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
-          id="menu-grid"
-        ></div>
-      </div>
-
-      <div class="lg:col-span-4 lg:sticky lg:top-24 h-fit">
-        <div
-          class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden flex flex-col"
-        >
-          <div class="p-5 border-b border-slate-50">
-            <h3 class="font-bold text-slate-800">Detail Pesanan</h3>
-          </div>
-
-          <div
-            id="cart-items"
-            class="p-5 min-h-[200px] max-h-[350px] overflow-y-auto custom-scroll space-y-3"
-          >
-            <p class="text-slate-300 italic text-center py-10">
-              Belum ada pesanan
-            </p>
-          </div>
-
-          <div class="p-5 bg-slate-50/50 space-y-4">
-            <div
-              class="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider"
-            >
-              <label>Metode</label><label>Lokasi</label>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <select
-                id="metode-bayar"
-                class="p-2.5 bg-white border rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="Tunai">Tunai</option>
-                <option value="QRIS/Non Tunai">QRIS/Non Tunai</option>
-                <option value="E-Wallet">E-Wallet(Shopeepay/Ovo/Gopay)</option>
-              </select>
-              <select
-                id="lokasi"
-                class="p-2.5 bg-white border rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="Dine In">Dine In</option>
-                <option value="Take Away">Take Away</option>
-                <option value="Grabfood">Grabfood</option>
-                <option value="Gofood">Gofood</option>
-                <option value="Shopeefood">Shopeefood</option>
-              </select>
-            </div>
-
-            <div
-              class="p-4 bg-orange-100/50 rounded-2xl border border-orange-100"
-            >
-              <label
-                class="text-[10px] font-bold text-orange-400 uppercase block mb-1"
-                >Uang Dibayar</label
-              >
-              <input
-                type="number"
-                id="uang-dibayar"
-                oninput="hitungKembalian()"
-                placeholder="0"
-                class="w-full p-2 bg-transparent text-xl font-bold outline-none"
-              />
-              <div
-                class="flex justify-between items-center mt-2 pt-2 border-t border-orange-200/50"
-              >
-                <span class="text-[10px] font-bold text-slate-400"
-                  >Kembalian</span
-                >
-                <span id="kembalian-view" class="font-bold text-slate-700"
-                  >Rp 0</span
-                >
-              </div>
-            </div>
-
-            <div class="flex justify-between items-end pt-2">
-              <span class="text-sm font-semibold text-slate-500">Total</span>
-              <span
-                id="total-view"
-                class="text-3xl font-extrabold text-orange-600"
-                >Rp 0</span
-              >
-            </div>
-
-            <button
-              onclick="simpanKeDatabase(this)"
-              class="w-full bg-slate-900 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all uppercase tracking-wider"
-            >
-              Simpan & Cetak Struk
-            </button>
-            <div class="grid grid-cols-2 gap-2 mt-2">
-              <button
-                onclick="clearCart()"
-                class="text-[10px] font-bold text-slate-400 hover:text-red-500 py-1 uppercase transition-colors"
-              >
-                Hapus
-              </button>
-              <button
-                onclick="resetCounter()"
-                class="text-[10px] font-bold text-slate-400 hover:text-slate-900 py-1 uppercase transition-colors text-right"
-              >
-                Reset ID
-              </button>
-            </div>
-          </div>
+    <main class="max-w-[1440px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8">
+            <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <span class="w-1.5 h-5 bg-orange-500 rounded-full"></span> Menu Utama
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="menu-grid"></div>
         </div>
-      </div>
+
+        <div class="lg:col-span-4 lg:sticky lg:top-24 h-fit">
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-slate-50"><h3 class="font-bold text-slate-800">Detail Pesanan</h3></div>
+                <div id="cart-items" class="p-5 min-h-[150px] max-h-[300px] overflow-y-auto custom-scroll space-y-3">
+                    <p class="text-slate-300 italic text-center py-10">Belum ada pesanan</p>
+                </div>
+
+                <div class="p-5 bg-slate-50/50 space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="metode-bayar" class="p-2.5 bg-white border rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+                            <option value="Tunai">Tunai</option>
+                            <option value="QRIS/Non Tunai">QRIS/Non Tunai</option>
+                            <option value="E-Wallet">E-Wallet</option>
+                        </select>
+                        <select id="lokasi" class="p-2.5 bg-white border rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500">
+                            <option value="Dine In">Dine In</option>
+                            <option value="Take Away">Take Away</option>
+                            <option value="Grabfood">Grabfood</option>
+                            <option value="Gofood">Gofood</option>
+                            <option value="Shopeefood">Shopeefood</option>
+                        </select>
+                    </div>
+
+                    <div class="p-4 bg-orange-100/50 rounded-2xl border border-orange-100">
+                        <label class="text-[10px] font-bold text-orange-400 uppercase block mb-1">Uang Dibayar</label>
+                        <input type="number" id="uang-dibayar" oninput="hitungKembalian()" placeholder="0" class="w-full p-2 bg-transparent text-xl font-bold outline-none">
+                        <div class="flex justify-between items-center mt-2 pt-2 border-t border-orange-200/50">
+                            <span class="text-[10px] font-bold text-slate-400">Kembalian</span>
+                            <span id="kembalian-view" class="font-bold text-slate-700">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-end pt-2">
+                        <span class="text-sm font-semibold text-slate-500">Total</span>
+                        <span id="total-view" class="text-3xl font-extrabold text-orange-600">Rp 0</span>
+                    </div>
+
+                    <button id="btn-simpan" onclick="simpanKeDatabase(this)" class="w-full bg-slate-900 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all uppercase tracking-wider">Simpan & Cetak Struk</button>
+                    <button onclick="clearCart()" class="w-full text-[10px] font-bold text-slate-400 hover:text-red-500 py-1 uppercase transition-colors">Hapus Pesanan</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <div id="receipt-print">
-      <div style="text-align: center">
-        <h2 style="font-size: 16px; margin: 0">AYAM BAKAR KAMPUS</h2>
-        <p style="font-size: 10px; margin: 0">Premium Quality Service</p>
-        <div id="rec-id" style="font-size: 9px; margin-top: 5px"></div>
-        <div id="rec-time" style="font-size: 9px; margin-bottom: 5px"></div>
-      </div>
-      <div style="border-top: 1px dashed black; margin: 5px 0"></div>
-      <div id="rec-items" style="font-size: 10px"></div>
-      <div style="border-top: 1px dashed black; margin: 5px 0"></div>
-      <div class="flex-print" style="font-weight: bold; font-size: 11px">
-        <span>TOTAL</span><span id="rec-total"></span>
-      </div>
-      <div class="flex-print" style="font-size: 10px">
-        <span>DIBAYAR</span><span id="rec-bayar"></span>
-      </div>
-      <div class="flex-print" style="font-size: 10px">
-        <span>KEMBALIAN</span><span id="rec-kembali"></span>
-      </div>
-      <div style="border-top: 1px dashed black; margin: 5px 0"></div>
-      <div style="text-align: center; font-size: 9px; margin-top: 5px">
-        <p id="rec-metode" style="margin: 0"></p>
-        <p id="rec-lokasi" style="margin: 0"></p>
-        <p style="margin-top: 10px">*** TERIMA KASIH ***</p>
-      </div>
+        <div style="text-align: center;">
+            <h2 style="font-size: 16px; margin: 0;">AYAM BAKAR KAMPUS</h2>
+            <p style="font-size: 10px; margin: 0;">Premium Quality Service</p>
+            <div id="rec-id" style="font-size: 9px; margin-top: 5px;"></div>
+            <div id="rec-time" style="font-size: 9px; margin-bottom: 5px;"></div>
+        </div>
+        <div style="border-top: 1px dashed black; margin: 5px 0;"></div>
+        <div id="rec-items" style="font-size: 10px;"></div>
+        <div style="border-top: 1px dashed black; margin: 5px 0;"></div>
+        <div class="flex-print" style="font-weight: bold; font-size: 11px;"><span>TOTAL</span><span id="rec-total"></span></div>
+        <div class="flex-print" style="font-size: 10px;"><span>DIBAYAR</span><span id="rec-bayar"></span></div>
+        <div class="flex-print" style="font-size: 10px;"><span>KEMBALIAN</span><span id="rec-kembali"></span></div>
+        <div style="border-top: 1px dashed black; margin: 5px 0;"></div>
+        <div style="text-align: center; font-size: 9px; margin-top: 5px;">
+            <p id="rec-metode" style="margin: 0;"></p>
+            <p id="rec-lokasi" style="margin: 0;"></p>
+            <p style="margin-top: 10px;">*** TERIMA KASIH ***</p>
+        </div>
     </div>
 
     <script>
-      const scriptURL =
-        "https://script.google.com/macros/s/AKfycbwcff5EzjGqP95XeNrUDSdl7LVVQLtJvRub7BM-e62FPhJk1hAnt3OtgKn3c2DVB0eE/exec";
-      const daftarMenu = [
-        { n: "Indomie Nasi Ayam Bakar (Ayam Besar)", h: 25000 },
-        { n: "Indomie Ayam Bakar (Ayam Besar)", h: 23000 },
-        { n: "Nasi Ayam Bakar (Ayam Besar)", h: 20000 },
-        { n: "Ayam Bakar (Ayam Besar)", h: 15000 },
-        { n: "Indomie Nasi Ayam Goreng (Ayam Besar)", h: 25000 },
-        { n: "Indomie Ayam Goreng (Ayam Besar)", h: 23000 },
-        { n: "Nasi Ayam Goreng (Ayam Besar)", h: 20000 },
-        { n: "Ayam Goreng (Ayam Besar)", h: 15000 },
-        { n: "Indomie Nasi Ayam Bakar", h: 20000 },
-        { n: "Indomie Ayam Bakar", h: 18000 },
-        { n: "Nasi Ayam Bakar", h: 15000 },
-        { n: "Ayam Bakar", h: 12000 },
-        { n: "Indomie Nasi Ayam Goreng", h: 20000 },
-        { n: "Indomie Ayam Goreng", h: 18000 },
-        { n: "Nasi Ayam Goreng", h: 15000 },
-        { n: "Ayam Goreng", h: 12000 },
-        { n: "Mie Mercon", h: 13000 },
-        { n: "Indomie", h: 6000 },
-        { n: "Tambah Nasi (5rb)", h: 5000 },
-        { n: "Goodday Freeze", h: 6000 },
-        { n: "Goodday Cappucino", h: 6000 },
-        { n: "Nutrisari", h: 5000 },
-        { n: "Es Teh", h: 4000 },
-        { n: "Teajus", h: 3000 },
-      ];
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxylzuWNdhbfC7mKTtSb3gCFSwbKXj7AYY-7MvA1-TVKsNdb_iyZyb99XzUPLQr2C23PA/exec';
+        const daftarMenu = [
+            { n: "Indomie Nasi Ayam Bakar", h: 18000 }, { n: "Indomie Ayam Bakar", h: 15000 },
+            { n: "Nasi Ayam Bakar", h: 13000 }, { n: "Ayam Bakar", h: 10000 },
+            { n: "Indomie Nasi Ayam Goreng", h: 18000 }, { n: "Indomie Ayam Goreng", h: 15000 },
+            { n: "Nasi Ayam Goreng", h: 13000 }, { n: "Ayam Goreng", h: 10000 },
+            { n: "Mie Mercon", h: 13000 }, { n: "Indomie", h: 6000 },
+            { n: "Tambah Nasi (3rb)", h: 3000 }, { n: "Tambah Nasi (2rb)", h: 2000 },
+            { n: "Tambah Nasi (1rb)", h: 1000 }, { n: "Goodday Freeze", h: 6000 },
+            { n: "Goodday Cappucino", h: 6000 }, { n: "Nutrisari", h: 5000 },
+            { n: "Es Teh", h: 3000 }, { n: "Teajus", h: 3000 }
+        ];
 
-      let keranjangAktif = [];
+        let keranjangAktif = [];
 
-      function renderMenu() {
-        document.getElementById("menu-grid").innerHTML = daftarMenu
-          .map(
-            (item, i) => `
+        function renderMenu() {
+            document.getElementById('menu-grid').innerHTML = daftarMenu.map((item, i) => `
                 <button onclick="tambahItem(${i})" class="menu-card bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:border-orange-200 text-left transition-all group">
-                    <div class="text-[12px] font-bold text-slate-700 h-8 leading-tight group-hover:text-orange-600">${
-                      item.n
-                    }</div>
+                    <div class="text-[12px] font-bold text-slate-700 h-8 leading-tight group-hover:text-orange-600">${item.n}</div>
                     <div class="text-sm font-black text-orange-500 mt-2">Rp ${item.h.toLocaleString()}</div>
                 </button>
-            `
-          )
-          .join("");
-        updateLogCount();
-      }
-
-      function tambahItem(idx) {
-        const item = daftarMenu[idx];
-        const ada = keranjangAktif.find((k) => k.nama === item.n);
-        if (ada) {
-          ada.qty++;
-        } else {
-          keranjangAktif.push({ nama: item.n, harga: item.h, qty: 1 });
+            `).join('');
         }
-        updateCartUI();
-      }
 
-      function updateCartUI() {
-        const container = document.getElementById("cart-items");
-        let total = 0;
-        if (keranjangAktif.length === 0) {
-          container.innerHTML =
-            '<p class="text-slate-300 italic text-center py-10">Belum ada pesanan</p>';
-          document.getElementById("total-view").innerText = "Rp 0";
-          return;
+        function tambahItem(idx) {
+            const item = daftarMenu[idx];
+            const ada = keranjangAktif.find(k => k.nama === item.n);
+            if (ada) { ada.qty++; } else { keranjangAktif.push({ nama: item.n, harga: item.h, qty: 1 }); }
+            updateCartUI();
         }
-        container.innerHTML = keranjangAktif
-          .map((item, i) => {
-            total += item.harga * item.qty;
-            return `<div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 animate-in fade-in slide-in-from-right-2 duration-300">
-                    <div class="text-[11px] font-bold">${item.qty}x ${
-              item.nama
-            }</div>
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items');
+            let total = 0;
+            if (keranjangAktif.length === 0) {
+                container.innerHTML = '<p class="text-slate-300 italic text-center py-10">Belum ada pesanan</p>';
+                document.getElementById('total-view').innerText = 'Rp 0';
+                return;
+            }
+            container.innerHTML = keranjangAktif.map((item, i) => {
+                total += (item.harga * item.qty);
+                return `<div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div class="text-[11px] font-bold">${item.qty}x ${item.nama}</div>
                     <div class="text-right">
-                        <div class="text-[11px] font-black">Rp ${(
-                          item.harga * item.qty
-                        ).toLocaleString()}</div>
-                        <button onclick="hapusSatu(${i})" class="text-[9px] text-red-400 font-bold hover:text-red-600 transition-colors">Hapus</button>
+                        <div class="text-[11px] font-black">Rp ${(item.harga * item.qty).toLocaleString()}</div>
+                        <button onclick="hapusSatu(${i})" class="text-[9px] text-red-400 font-bold">Hapus</button>
                     </div>
                 </div>`;
-          })
-          .join("");
-        document.getElementById(
-          "total-view"
-        ).innerText = `Rp ${total.toLocaleString()}`;
-        hitungKembalian();
-      }
-
-      function hapusSatu(i) {
-        keranjangAktif.splice(i, 1);
-        updateCartUI();
-      }
-
-      function hitungKembalian() {
-        const total = keranjangAktif.reduce(
-          (sum, item) => sum + item.harga * item.qty,
-          0
-        );
-        const bayar = document.getElementById("uang-dibayar").value || 0;
-        const kembali = bayar - total;
-        document.getElementById("kembalian-view").innerText = `Rp ${
-          kembali > 0 ? kembali.toLocaleString() : 0
-        }`;
-      }
-
-      async function simpanKeDatabase(btn) {
-        const total = keranjangAktif.reduce(
-          (sum, item) => sum + item.harga * item.qty,
-          0
-        );
-        const bayar = document.getElementById("uang-dibayar").value || 0;
-        if (keranjangAktif.length === 0) return alert("Pilih menu!");
-        if (
-          bayar < total &&
-          document.getElementById("metode-bayar").value === "Tunai"
-        )
-          return alert("Uang kurang!");
-
-        const now = new Date();
-        let counter = localStorage.getItem("trxCounter") || 1;
-        const idTrx = `TR-${now.getFullYear()}-${String(
-          now.getMonth() + 1
-        ).padStart(2, "0")}-${String(counter).padStart(3, "0")}`;
-        const waktuRapi =
-          now.getHours().toString().padStart(2, "0") +
-          ":" +
-          now.getMinutes().toString().padStart(2, "0");
-
-        // Set Data Struk
-        document.getElementById("rec-id").innerText = "ID: " + idTrx;
-        document.getElementById("rec-time").innerText =
-          now.toLocaleString("id-ID");
-        document.getElementById("rec-total").innerText =
-          "Rp " + total.toLocaleString();
-        document.getElementById("rec-bayar").innerText =
-          "Rp " + parseInt(bayar).toLocaleString();
-        document.getElementById("rec-kembali").innerText =
-          "Rp " + (bayar - total).toLocaleString();
-        document.getElementById("rec-metode").innerText =
-          "Bayar: " + document.getElementById("metode-bayar").value;
-        document.getElementById("rec-lokasi").innerText =
-          "Lokasi: " + document.getElementById("lokasi").value;
-        document.getElementById("rec-items").innerHTML = keranjangAktif
-          .map(
-            (i) =>
-              `<div class="flex-print"><span>${i.qty}x ${i.nama}</span><span>${(
-                i.harga * i.qty
-              ).toLocaleString()}</span></div>`
-          )
-          .join("");
-
-        btn.disabled = true;
-        btn.innerText = "MENGIRIM...";
-
-        try {
-          const dataKirim = keranjangAktif.map((item) => ({
-            idTransaksi: idTrx,
-            tanggal: now.toLocaleDateString("id-ID").replace(/\//g, "-"),
-            waktu: waktuRapi,
-            namaBarang: item.nama,
-            kuantitas: item.qty,
-            totalBayar: item.harga * item.qty,
-            metode: document.getElementById("metode-bayar").value,
-            lokasi: document.getElementById("lokasi").value,
-          }));
-          await fetch(scriptURL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify(dataKirim),
-          });
-          localStorage.setItem("trxCounter", parseInt(counter) + 1);
-
-          setTimeout(() => {
-            window.print();
-            keranjangAktif = [];
-            document.getElementById("uang-dibayar").value = "";
-            updateCartUI();
-            updateLogCount();
-          }, 500);
-        } catch (e) {
-          alert("Gagal!");
-        } finally {
-          btn.disabled = false;
-          btn.innerText = "Simpan & Cetak Struk";
+            }).join('');
+            document.getElementById('total-view').innerText = `Rp ${total.toLocaleString()}`;
+            hitungKembalian();
         }
-      }
 
-      function updateLogCount() {
-        let currentTrx = (localStorage.getItem("trxCounter") || 1) - 1;
-        document.getElementById(
-          "log-count"
-        ).innerText = `${currentTrx} TRANSAKSI HARI INI`;
-      }
-      function clearCart() {
-        keranjangAktif = [];
-        updateCartUI();
-      }
-      function updateClock() {
-        const now = new Date();
-        document.getElementById("live-clock").innerText =
-          now.toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        document.getElementById("live-date").innerText = now.toLocaleDateString(
-          "id-ID",
-          { weekday: "long", day: "numeric", month: "long" }
-        );
-      }
-      function resetCounter() {
-        if (confirm("Mulai dari 001?")) {
-          localStorage.setItem("trxCounter", 1);
-          updateLogCount();
+        function hapusSatu(i) { keranjangAktif.splice(i, 1); updateCartUI(); }
+
+        function hitungKembalian() {
+            const total = keranjangAktif.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+            const bayar = document.getElementById('uang-dibayar').value || 0;
+            const kembali = bayar - total;
+            document.getElementById('kembalian-view').innerText = `Rp ${kembali > 0 ? kembali.toLocaleString() : 0}`;
         }
-      }
 
-      setInterval(updateClock, 1000);
-      updateClock();
-      renderMenu();
+        async function simpanKeDatabase(btn) {
+            const total = keranjangAktif.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+            const bayar = document.getElementById('uang-dibayar').value || 0;
+            if (keranjangAktif.length === 0) return alert("Pilih menu!");
+            if (bayar < total && document.getElementById('metode-bayar').value === 'Tunai') return alert("Uang kurang!");
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> SINKRON ID...</span>`;
+
+            try {
+                // 1. AMBIL ID TERAKHIR DARI GOOGLE SHEETS
+                const resID = await fetch(scriptURL);
+                const lastIdString = await resID.text();
+                
+                // 2. GENERATE ID BARU
+                const parts = lastIdString.split('-');
+                const lastNum = parseInt(parts[parts.length - 1]) || 0;
+                const nextNum = lastNum + 1;
+                
+                const now = new Date();
+                const idTrx = `TR-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(nextNum).padStart(3,'0')}`;
+
+                // 3. SET DATA STRUK
+                document.getElementById('rec-id').innerText = "ID: " + idTrx;
+                document.getElementById('rec-time').innerText = now.toLocaleString('id-ID');
+                document.getElementById('rec-total').innerText = "Rp " + total.toLocaleString();
+                document.getElementById('rec-bayar').innerText = "Rp " + parseInt(bayar).toLocaleString();
+                document.getElementById('rec-kembali').innerText = "Rp " + (bayar - total).toLocaleString();
+                document.getElementById('rec-metode').innerText = "Bayar: " + document.getElementById('metode-bayar').value;
+                document.getElementById('rec-lokasi').innerText = "Lokasi: " + document.getElementById('lokasi').value;
+                document.getElementById('rec-items').innerHTML = keranjangAktif.map(i => `<div class="flex-print"><span>${i.qty}x ${i.nama}</span><span>${(i.harga*i.qty).toLocaleString()}</span></div>`).join('');
+
+                // 4. KIRIM DATA
+                const dataKirim = keranjangAktif.map(item => ({
+                    idTransaksi: idTrx, tanggal: now.toLocaleDateString('id-ID').replace(/\//g, '-'), waktu: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
+                    namaBarang: item.nama, kuantitas: item.qty, totalBayar: item.harga * item.qty,
+                    metode: document.getElementById('metode-bayar').value, lokasi: document.getElementById('lokasi').value
+                }));
+
+                await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataKirim) });
+                
+                window.print();
+                keranjangAktif = [];
+                document.getElementById('uang-dibayar').value = '';
+                updateCartUI();
+            } catch (e) { 
+                alert("Koneksi Error! Cek Internet."); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerText = "Simpan & Cetak Struk"; 
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('live-date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+        function clearCart() { if(confirm("Hapus semua pesanan?")) { keranjangAktif = []; updateCartUI(); } }
+        
+        setInterval(updateClock, 1000);
+        updateClock();
+        renderMenu();
     </script>
-  </body>
+</body>
 </html>
